@@ -1,0 +1,41 @@
+program atry1;
+
+uses ascreen2,acrt;
+
+const
+  backg:word = 176 + (red + blue shl 4) shl 8;
+var
+  oldexit : pointer;
+  save_screen : tSaveScreen;
+
+procedure Finish; far;
+begin
+  exitproc := oldexit;
+  restoreinfo(save_screen);
+end;
+
+procedure SetUpScreen;
+begin
+  fillscr(TextScreen, backg);
+  tattr := red + blue shl 4;
+  borderwindow(2);
+  window(10,5,70,20);
+  fillwin(176 + (blue + red shl 4) shl 8);
+  tattr := yellow + cyan shl 4;
+  borderwindow(3);
+end;
+
+procedure dostuff;
+var
+  s1,s2,s3 : string;
+begin
+  SetUpScreen;
+  getkey;
+end;
+
+begin
+  oldexit := exitproc;
+  exitproc := @Finish;
+  saveinfo(save_screen);
+  dostuff;
+end.

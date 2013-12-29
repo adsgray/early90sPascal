@@ -1,0 +1,119 @@
+{$R-,D-,I-}
+uses amouse,aevent,acrt,ascreen;
+const
+  xmax = 79;
+  ymax = 49;
+
+var
+  event : tEvent;
+  oldexit : pointer;
+
+procedure Done; far;
+begin
+  exitproc := oldexit;
+  amouse.hide;
+  cursor(true);
+  Cblink(true);
+  vmode(3);
+  write('Error(',exitcode,'): ');
+  case exitcode of
+    0 : writeln('Escape pressed.');
+    5 : writeln('Mouse not found.');
+    255 : writeln('Ctrl-Break pressed.');
+  end;
+end;
+
+procedure mouse_update;
+var
+  sx,sy : byte;
+begin
+  sx := wx;
+  sy := wy;
+  goxy(73,0);
+  write('(',amouse.twherex:2,',',amouse.twherey:2,')');
+  goxy(sx,sy);
+end;
+
+procedure Rand_Wins;
+var
+  ev_temp : tEvent;
+  x1,y1,
+  x2,y2   : byte;
+begin
+  repeat
+    x1 := random(80);
+    y1 := random(25);
+    x2 := x1 + random(xmax div 2);
+    y2 := y1 + random(ymax div 2);
+    window(x1,y1,x2,y2);
+    tattr := random(256);
+    clrscr;
+    GetEvent(ev_temp);
+  until (ev_temp.ev <> enothing);
+  window(0,0,xmax,ymax);
+end;
+
+procedure b_switch(var b1,b2:byte);
+var
+  temp : byte;
+begin
+  temp := b1;
+  b1 := b2;
+  b2 := temp;
+end;
+
+procedure dragwindow(x1,y1:byte);
+var
+  x2,y2 : byte;
+  ev_temp : tEvent;
+begin
+  repeat
+    GetEvent(ev_temp);
+    mouse_update;
+  until (ev_temp.ev <> emouse);
+  x2 := amouse.Twherex - 1;
+  y2 := amouse.Twherey - 1;
+  if x1 > x2 then b_switch(x1,x2);
+  if y1 > y2 then b_switch(y1,y2);
+  window(x1,y1,x2,y2);
+  tattr := random(256);
+  amouse.hide;
+  clrscr;
+  amouse.show;
+  window(0,0,xmax,ymax);
+end;
+
+begin
+ oldexit := exitproc;
+ exitproc := @Done;
+ if not amouse.init then halt(5);
+ vga50;
+ cursor(false);
+ Cblink(false);
+ window(0,0,xmax,ymax);
+ amouse.show;
+ randomize;
+ repeat
+  repeat
+    getevent(event);
+    mouse_update;
+  until event.ev <> enothing;
+    case event.ev of
+        ekeyboard : begin
+                      case event.ekey.sc of
+                 { C }  46:begin
+                             tattr := random(256);
+                             amouse.hide;
+                             clrscr;
+                             amouse.show;
+                             goxy(0,0);
+                           end;
+                 { W }  17: Rand_Wins;
+                      else with event.ekey do
+                        writeln('keyboard: (',ch:3,',',sc:3,')  (',hard:5,')');
+                      end;
+                    end;
+        emouse    : with event.minfo do dragwindow(tx-1,ty-1);
+    end;
+ until (event.ev = ekeyboard) and (event.ekey.sc = 1);
+end.
